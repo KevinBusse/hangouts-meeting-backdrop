@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<title>Star Republic Conference</title>
+	<meta charset='utf-8' />
+	<link rel="shortcut icon" href="/favicon.ico?v=2" type="image/x-icon">
+	<link rel="icon" href="/favicon.ico?v=2" type="image/x-icon">
+	<link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+	<link rel="stylesheet" href="https://code.getmdl.io/1.3.0/material.blue_grey-pink.min.css">
+	<link href="https://fonts.googleapis.com/css?family=Roboto:100,300,400" rel="stylesheet">
+	<script defer src="https://code.getmdl.io/1.3.0/material.min.js"></script>
+	<style type="text/css">
+		html,
+		body {
+			margin: 0;
+			padding: 0;
+			background-color: #fff;
+			background: no-repeat center center fixed;
+			background-size: cover;
+			font-family: 'Roboto', sans-serif;
+			color: #fff;
+			letter-spacing: 0.5px;
+			font-size 18px;
+			height: 100%;
+			transition: background 5s cubic-bezier(.4,0,.2,1);
+			text-shadow: -1px -1px 4px rgba(0,0,0,.15), 1px -1px 4px rgba(0,0,0,.15), -1px 1px 4px rgba(0,0,0,.15), 1px 1px 4px rgba(0,0,0,.15);
+		}
+		
+		.container {
+			height: 100%;
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			justify-content: center;
+			position: relative;
+			background-image: linear-gradient(rgba(0,0,0,.6),rgba(0,0,0,.4) 10%,transparent,rgba(0,0,0,.4) 70%, rgba(0,0,0,.6));
+		}
+
+		.mdl-menu{
+			text-shadow: initial;
+		}
+
+		#spinner{
+			transition: opacity 0.3s cubic-bezier(.4,0,.2,1);
+			vertical-align: middle;
+			margin-left: 16px;
+			width: 20px;
+			height: 20px;
+		}
+
+		#spinner div{
+			border-color: #fff;
+		}
+
+		#time{
+			font-size: 180px;
+			font-weight: 100;
+			margin: 20px 0;
+			text-align: center;
+			line-height: 180px;
+		}
+
+		#room, #date{
+			margin: 0px;
+			font-size: 30px;
+			font-weight: 300;
+			text-align: center;
+		}
+
+		#join{
+			margin-top: 24px;
+			border: 2px solid;
+		    height: 64px;
+		    width: 64px;
+		    color:#fff;
+		    transition: opacity 0.3s cubic-bezier(.4,0,.2,1);
+		}
+
+		#menu {
+			position: absolute;
+    		bottom: 0px;
+		}
+
+		.mdl-layout__header-row{
+			padding-left: 40px;
+		}
+
+		.mdl-layout-title{
+			letter-spacing: .04em;
+			font-weight: 300;
+		}
+
+		.time-container{
+			display: flex;
+		    flex-direction: column;
+		    align-items: center;
+		}
+
+		.mdl-navigation button{
+			line-height: 64px;
+    		padding: 0 24px;
+    		height: 64px;
+    		width: 64px;
+		}
+
+	</style>
+</head>
+
+<body>
+
+
+
+
+	<div class="container">
+
+		<div class="time-container">
+			<h2 id="date"></h2>
+			<h1 id="time"></h1>
+			<h2 id="room">&nbsp;</h2>
+			<button disabled id="join" style="opacity: 0;"  class="mdl-navigation__link mdl-button mdl-button--icon mdl-js-button mdl-js-ripple-effect">
+				<i class="material-icons">call</i>
+			</button>
+			<div class="mdl-tooltip" for="join">
+				Join call
+			</div>
+		</div>
+
+		<header id="menu" class="mdl-layout__header mdl-layout__header--transparent">
+		    <div class="mdl-layout__header-row">
+		      <!-- Title -->
+		      <span class="mdl-layout-title">Star Republic Conference</span>
+		      <!-- Add spacer, to align navigation to the right -->
+		      <div class="mdl-layout-spacer"></div>
+		      <!-- Navigation -->
+		      <nav class="mdl-navigation">
+		      	<div style="opacity: 0;" id="spinner" class="mdl-spinner mdl-js-spinner is-active mdl-spinner--single-color"></div>
+		      	<button disabled id="authorize-button" class="mdl-navigation__link mdl-button mdl-button--icon mdl-js-button mdl-js-ripple-effect">
+					<i class="material-icons">vpn_key</i>
+				</button>
+				<div class="mdl-tooltip mdl-tooltip--top" for="authorize-button">
+					Authorize
+				</div>
+		      	<ul id="select-room-list" class="mdl-menu mdl-menu--top-right mdl-js-menu mdl-js-ripple-effect" for="select-room-button">
+				</ul>
+		      	<button disabled id="select-room-button"  class="mdl-navigation__link mdl-button mdl-button--icon mdl-js-button mdl-js-ripple-effect">
+					<i class="material-icons">settings</i>
+				</button>
+				<div class="mdl-tooltip mdl-tooltip--top" for="select-room-button">
+					Select room
+				</div>
+		        <button disabled id="exit-button" class="mdl-button mdl-button--icon mdl-js-button mdl-js-ripple-effect">
+					<i class="material-icons">exit_to_app</i>
+				</button>
+				<div class="mdl-tooltip mdl-tooltip--top" for="exit-button">
+					Log out
+				</div>
+		      </nav>
+		    </div>
+		</header>
+		
+		
+
+	</div>
+
+		
+
+
+
+
+	<script type="text/javascript">
+		// Client ID and API key from the Developer Console
+		var CLIENT_ID = '536220681671-hul0vlsvellc4vq1tqdslt8k0260pcib.apps.googleusercontent.com';
+		var hangoutWindow = null;
+		var interval = null;
+		var backgroundInterval = null;
+		var currentId = null;
+		var hangoutLink = null;
+
+
+		// Array of API discovery doc URLs for APIs used by the quickstart
+		var DISCOVERY_DOCS = ["https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest", "https://www.googleapis.com/discovery/v1/apis/admin/directory_v1/rest"];
+
+
+		var SCOPES = "https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/admin.directory.resource.calendar.readonly";
+
+		var elements = {
+			authButton: document.getElementById('authorize-button'),
+			selectRoomButton: document.getElementById('select-room-button'),
+			selectRoomList: document.getElementById('select-room-list'),
+			spinner: document.getElementById('spinner'),
+			exitButton: document.getElementById('exit-button'),
+			time: document.getElementById('time'),
+			date: document.getElementById('date'),
+			room: document.getElementById('room'),
+			join: document.getElementById('join')
+		}
+
+
+		function showTime(){
+			var time = new Date();
+			elements.time.innerHTML = ("0" + time.getHours()).slice(-2)   + ":" + ("0" + time.getMinutes()).slice(-2);// + ":" + ("0" + time.getSeconds()).slice(-2);
+			elements.date.innerHTML = new Date().toString().slice(0,15);
+			setTimeout(showTime, 1000);
+		}
+		showTime();
+
+		function getJSON(url){
+			return new Promise(function(resolve, reject){
+				var xhr = new XMLHttpRequest();
+				xhr.open('GET', url);
+				xhr.onload = function() {
+				    if (xhr.status === 200) {
+				    	try{
+				    		resolve(JSON.parse(xhr.responseText))
+				    	}catch(e){
+				    		reject(e);
+				    	}
+				    }
+				    else {
+				        reject();
+				    }
+				};
+				xhr.send();
+			});
+		}
+
+		function createCookie(name, value, days) {
+			var expires = "";
+			if (days) {
+				var date = new Date();
+				date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+				expires = "; expires=" + date.toUTCString();
+			}
+			document.cookie = name + "=" + value + expires + "; path=/";
+		}
+
+		function readCookie(name) {
+			var nameEQ = name + "=";
+			var ca = document.cookie.split(';');
+			for (var i = 0; i < ca.length; i++) {
+				var c = ca[i];
+				while (c.charAt(0) == ' ') c = c.substring(1, c.length);
+				if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length, c.length);
+			}
+			return null;
+		}
+
+		function eraseCookie(name) {
+			createCookie(name, "", -1);
+		}
+
+
+		function handleClientLoad() {
+			gapi.load('client:auth2', initClient);
+			loadBackgrounds();
+		}
+
+		/**
+		 *  Initializes the API client library and sets up sign-in state
+		 *  listeners.
+		 */
+		function initClient() {
+			gapi.client.init({
+				discoveryDocs: DISCOVERY_DOCS,
+				clientId: CLIENT_ID,
+				scope: SCOPES
+			}).then(function() {
+
+
+
+				gapi.auth2.getAuthInstance().isSignedIn.listen(updateSigninStatus);
+
+				updateSigninStatus(gapi.auth2.getAuthInstance().isSignedIn.get());
+
+				// Listen for sign-in state changes.
+				//gapi.auth2.getAuthInstance().isSignedIn.listen(updateSigninStatus);
+
+				// Handle the initial sign-in state.
+
+
+				elements.exitButton.onclick = handleSignoutClick;
+				elements.authButton.onclick = handleAuthClick;
+				elements.join.onclick = handleJoinClick;
+				//signoutButton.onclick = handleSignoutClick;
+			});
+		}
+
+		function updateSigninStatus(isSignedIn) {
+			if (isSignedIn) {
+				elements.authButton.setAttribute('disabled','')
+				elements.exitButton.removeAttribute('disabled')
+				
+				resourceEmail = readCookie('resourceEmail')
+				var resourceName = readCookie('resourceName');
+
+				listRooms();
+				if (resourceEmail) {
+					elements.selectRoomButton.removeAttribute('disabled')
+					elements.room.innerHTML = resourceName;
+
+
+					//elements.selectRoomButton.
+					loadEvents(resourceEmail);
+				}
+			} else {
+				elements.spinner.style.opacity = 0;
+				elements.exitButton.setAttribute('disabled','')
+				elements.authButton.removeAttribute('disabled')
+				elements.selectRoomButton.setAttribute('disabled','')
+				elements.room.innerHTML = "&nbsp;";
+			}
+		  }
+
+		function loadBackgrounds(){
+			if(!backgroundInterval){
+				backgroundInterval = setInterval(function() {
+					loadBackgrounds();
+				}, 10 * 60 * 1000);
+			}
+			getJSON("backgrounds.json").then(function(json){
+				var imageUrl = json[parseInt(Math.random()*json.length)].url;
+				var imageElement = document.createElement('img');
+				imageElement.src = imageUrl;
+				imageElement.onload = function(){
+					document.body.style.backgroundImage = "url("+imageUrl+")";
+				}
+				imageElement.style.display = "none";
+			});
+		}
+
+		function loadEvents(email) {
+			interval = setInterval(function() {
+				onInterval(email);
+			}, 30 * 1000);
+			onInterval(email);
+		}
+
+		function onInterval(email) {
+
+			var minTime = new Date(new Date().toISOString().slice(0, 10));
+			var maxTime = new Date(minTime);
+			maxTime.setHours(23);
+			maxTime.setMinutes(59);
+
+			elements.spinner.style.opacity = 1;
+
+			gapi.client.calendar.events.list({
+				'calendarId': email,
+				'timeMin': minTime.toISOString(),
+				'timeMax': maxTime.toISOString(),
+				'showDeleted': false,
+				'singleEvents': true,
+				'orderBy': 'startTime'
+			}).then(function(response) {
+
+				elements.spinner.style.opacity = 0;
+
+				var events = response.result.items;
+
+				var nowTime = new Date().getTime();
+				var eventId = null;
+				var occurringEvent = null;
+
+				events.forEach(function(event) {
+					var startTime = new Date(event.start.dateTime).getTime();
+					var endTime = new Date(event.end.dateTime).getTime()
+
+					if (startTime <= nowTime && endTime > nowTime) {
+						hangoutLink = event.hangoutLink;
+						eventId = event.id;
+						occurringEvent = event;
+					}
+
+				});
+
+				if(currentId != eventId && hangoutWindow){
+					hangoutWindow.close();
+					hangoutWindow = null;
+					hangoutLink = null;
+					elements.join.style.opacity = 0;
+					elements.join.setAttribute('disabled','');
+				}
+
+				if (hangoutLink && !hangoutWindow) {
+					currentId = eventId;
+					elements.join.removeAttribute('disabled');
+					elements.join.style.opacity = 1;
+					if(occurringEvent.description.indexOf("\/autostart") !== -1){
+						hangoutWindow = window.open(hangoutLink);
+					}
+				} else if (!hangoutLink && hangoutWindow) {
+					hangoutWindow.close();
+					hangoutWindow = null;
+					hangoutLink = null;
+					elements.join.style.opacity = 0;
+					elements.join.setAttribute('disabled','');
+				}
+			}, function(){
+				elements.spinner.style.opacity = 0;
+			})
+
+		}
+
+		function handleAuthClick(event) {
+			if(!event.target.parentElement.hasAttribute('disabled')){
+				gapi.auth2.getAuthInstance().signIn();
+			}
+		}
+
+		function handleSignoutClick(event) {
+			if(interval){
+				clearInterval(interval);
+			}
+			eraseCookie('resourceEmail');
+			eraseCookie('resourceName');
+			gapi.auth2.getAuthInstance().signOut();
+		}
+
+		function handleJoinClick(event){
+			hangoutWindow = window.open(hangoutLink);
+		}
+
+		function handleMenuClick(email, name){
+			
+
+			elements.selectRoomButton.click();
+			if(interval){
+				clearInterval(interval);
+			}
+			createCookie('resourceEmail', email);
+			createCookie('resourceName', name);
+			updateSigninStatus(true);
+		}
+
+		function naturalSorter(as, bs){
+			var a, b, a1, b1, i= 0, n, L,
+			rx=/(\.\d+)|(\d+(\.\d+)?)|([^\d.]+)|(\.\D+)|(\.$)/g;
+			if(as=== bs) return 0;
+			a= as.toLowerCase().match(rx);
+			b= bs.toLowerCase().match(rx);
+			L= a.length;
+			while(i<L){
+				if(!b[i]) return 1;
+				a1= a[i],
+				b1= b[i++];
+				if(a1!== b1){
+					n= a1-b1;
+					if(!isNaN(n)) return n;
+					return a1>b1? 1:-1;
+				}
+			}
+			return b[i]? -1:0;
+		}
+
+
+		function listRooms() {
+			elements.spinner.style.opacity = 1;
+
+			gapi.client.directory.resources.calendars.list({
+				'customer': 'my_customer',
+				'orderBy': 'resourceName'
+			}).then(function(response) {
+				elements.selectRoomButton.removeAttribute('disabled')
+				var rooms = response.result.items;
+
+				rooms.sort(function(r1, r2) {
+				    return naturalSorter(r1.resourceName, r2.resourceName);
+				});
+
+				elements.selectRoomList.innerHTML = "";
+
+				rooms.forEach(function(room) {
+
+					var listItem = document.createElement("li");
+					listItem.className = "mdl-menu__item";
+					listItem.innerHTML = room.resourceName;
+					listItem.onclick = function(){
+						handleMenuClick(room.resourceEmail, room.resourceName);
+
+					}
+					
+					elements.selectRoomList.appendChild(listItem);
+
+				})
+
+
+			},function(e){
+				elements.spinner.style.opacity = 0;
+			}).then(function(){
+				elements.spinner.style.opacity = 0;
+			})
+
+		}
+	</script>
+
+	<script async defer src="https://apis.google.com/js/api.js" onload="this.onload=function(){};handleClientLoad()" onreadystatechange="if (this.readyState === 'complete') this.onload()">
+	</script>
+</body>
+
+</html>
